@@ -1,0 +1,158 @@
+/* Minimalist Web Notepad — note.ms style */
+
+:root {
+  --font: 'SF Mono', 'Cascadia Code', 'Consolas', 'Menlo', monospace;
+  --bg:       #ebeef2;
+  --surface:  #fff;
+  --text:     #333;
+  --text-dim: #bbb;
+  --border:   rgba(0,0,0,.06);
+  --radius:   6px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:       #1a1a1a;
+    --surface:  #222;
+    --text:     #ddd;
+    --text-dim: #555;
+    --border:   rgba(255,255,255,.06);
+  }
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+}
+
+/* ── Stack: outer wrapper ─────────────────────────── */
+
+.stack {
+  position: fixed;
+  inset: 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Layers: paper-stack effect ──────────────────── */
+
+.layer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.layer .layer {
+  box-shadow: 0 0 0 1px var(--border);
+}
+
+.layer .layer .layer {
+  box-shadow: 0 1px 4px rgba(0,0,0,.04), 0 0 0 1px var(--border);
+  background: var(--surface);
+  border-radius: var(--radius);
+}
+
+/* ── Textarea ────────────────────────────────────── */
+
+textarea.content {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 18px;
+  border: none;
+  outline: none;
+  resize: none;
+  overflow-y: auto;
+  border-radius: var(--radius);
+
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text);
+  background: transparent;
+}
+
+/* ── Flag (branding + note path) ─────────────────── */
+
+.flag {
+  flex-shrink: 0;
+  padding: 10px 0 0 2px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 12px;
+  color: var(--text-dim);
+  user-select: none;
+}
+
+.flag a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.flag a:hover {
+  text-decoration: underline;
+}
+
+/* ── Print ───────────────────────────────────────── */
+
+#printable { display: none; }
+
+@media print {
+  .stack { display: none; }
+  #printable {
+    display: block;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: var(--font);
+    font-size: 10pt;
+    line-height: 1.6;
+    padding: 0.5in;
+    color: #000;
+  }
+}
+
+/* ── Status bar ──────────────────────────────────── */
+
+#status-bar {
+  position: fixed;
+  bottom: 14px;
+  right: 18px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  opacity: 0;
+  transition: opacity .25s ease;
+  pointer-events: none;
+}
+
+.stack:focus-within ~ #status-bar,
+#status-bar:hover {
+  opacity: 1;
+}
+
+#status-indicator {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--text-dim);
+}
+
+.status--idle   { background: var(--text-dim); }
+.status--saving { background: #f5a623; }
+.status--saved  { background: #4cd964; }
+.status--error  { background: #ff3b30; }
+
+#status-text {
+  font-size: 11px;
+  color: var(--text-dim);
+  user-select: none;
+}
+
+/* ── Mobile ──────────────────────────────────────── */
+
+@media (max-width: 480px) {
+  .stack { inset: 16px; }
+  textarea.content { padding: 16px; font-size: 13px; }
+}
