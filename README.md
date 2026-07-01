@@ -52,25 +52,19 @@ curl http://localhost:3000/mynote -d 'text='
 
 | 环境 | 后端 | 说明 |
 |---|---|---|
-| 本地 / 自托管 | 文件系统 (`_tmp/`) | 零配置，即开即用 |
-| Vercel + KV | Vercel KV (Redis) | 部署到 Vercel 时自动启用 |
+| 本地 / 自托管 | 文件系统 `_tmp/` | 零配置，即开即用 |
+| Vercel + KV 已配置 | Upstash Redis | 部署到 Vercel 时自动启用 |
 
-检测逻辑：当 `VERCEL=1` 且 `KV_URL` 存在时自动走 KV，否则走文件系统。
+检测逻辑：`process.env.VERCEL === '1'` 且存在 `KV_URL` 时自动走 Upstash Redis，否则走文件系统。
+
+> Vercel KV 已于 2024 年 12 月停用，由 Upstash Redis 替代。配置指南见 [`docs/upstash-redis-guide.md`](docs/upstash-redis-guide.md)。
 
 ### 部署到 Vercel
 
 1. 将项目推送至 GitHub
 2. 在 [vercel.com](https://vercel.com) 导入仓库
-3. 添加 KV 数据库（Storage → Create → KV）
-4. 部署即可，无需额外配置
-
-## 技术栈
-
-- **运行时**: Node.js
-- **框架**: Express
-- **存储**: 文件系统 / Vercel KV（自动切换）
-- **前端**: 原生 HTML + CSS + JavaScript（零依赖）
-- **CSS 变量**: 支持亮色/暗色主题
+3. 按 [`docs/upstash-redis-guide.md`](docs/upstash-redis-guide.md) 创建并连接 Upstash Redis 数据库
+4. 重新部署即可
 
 ## 项目结构
 
@@ -79,17 +73,27 @@ curl http://localhost:3000/mynote -d 'text='
 ├── routes/
 │   └── notes.js          笔记路由（CRUD + HTML 渲染）
 ├── services/
-│   └── storage.js        存储层（双后端自动切换）
+│   └── storage.js        存储层（文件系统 / Upstash Redis 自动切换）
 ├── public/
 │   ├── css/style.css     样式
 │   ├── js/app.js         前端自动保存逻辑
 │   ├── favicon.ico
 │   └── favicon.svg
+├── docs/
+│   └── upstash-redis-guide.md    Upstash Redis 配置指南
 └── _tmp/                 本地文件存储目录
 ```
 
+## 技术栈
+
+- **运行时**: Node.js
+- **框架**: Express
+- **存储**: 文件系统 / Upstash Redis（自动切换）
+- **前端**: 原生 HTML + CSS + JavaScript（零依赖）
+- **CSS 变量**: 支持亮色/暗色主题
+
 ## License
 
-Apache 2.0 — 参见 [LICENSE](/LICENSE)
+Apache 2.0
 
-原作者: Pere Orga \<pere@orga.cat\> (2012)
+原作: Pere Orga \<pere@orga.cat\> (2012)
