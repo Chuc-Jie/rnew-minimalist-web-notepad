@@ -77,7 +77,6 @@ router.post('/:note', async (req, res) => {
 // ── Helper: HTML template ────────────────────────────────────
 
 function renderPage(content, noteId) {
-  const title = escapeHtml(noteId);
   const cssPath = '/css/style.css';
   const jsPath = '/js/app.js';
 
@@ -87,7 +86,7 @@ function renderPage(content, noteId) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#ebeef2">
-<title>${title}</title>
+<title>note.youyer.top</title>
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="${cssPath}">
