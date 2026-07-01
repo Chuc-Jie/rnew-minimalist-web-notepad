@@ -1,14 +1,14 @@
 /**
  * Storage layer — dual backend with auto-detection.
  *
- * ┌─────────────────────────────────────────────────────┐
- * │  Environment              │  Backend                │
- * ├───────────────────────────┼─────────────────────────┤
- * │  Local (no Vercel env)   │  File system (_tmp/)    │
- * │  Vercel + KV configured  │  Vercel KV (Redis)      │
- * └───────────────────────────┴─────────────────────────┘
+ * ┌──────────────────────────────────────────────────────────┐
+ * │  Environment                  │  Backend                │
+ * ├───────────────────────────────┼─────────────────────────┤
+ * │  Local (no VERCEL env)       │  File system (_tmp/)    │
+ * │  Vercel + KV_URL configured  │  Upstash Redis          │
+ * └───────────────────────────────┴─────────────────────────┘
  *
- * Detection: if VERCEL=1 and KV_URL is set → KV, else filesystem.
+ * Detection: if VERCEL=1 and KV_URL is set → Upstash Redis, else filesystem.
  */
 
 const fs = require('fs');
@@ -68,7 +68,8 @@ let kvBackend = null;
 function initKv() {
   if (kvBackend) return;
   try {
-    const { kv } = require('@vercel/kv');
+    const { Redis } = require('@upstash/redis');
+    const kv = Redis.fromEnv();
     kvBackend = {
       async getNote(id) {
         const val = await kv.get(id);
@@ -86,7 +87,7 @@ function initKv() {
       },
     };
   } catch (e) {
-    console.error('Failed to init Vercel KV:', e.message);
+    console.error('Failed to init Upstash KV:', e.message);
     kvBackend = null;
   }
 }
@@ -99,7 +100,7 @@ const activeBackend = useKv
 
 // Log which backend is active (only once)
 if (useKv) {
-  console.log('📦 Storage: Vercel KV');
+  console.log('📦 Storage: Upstash Redis');
 } else {
   console.log('📦 Storage: File system (_tmp/)');
 }
