@@ -67,6 +67,10 @@ textarea.content {
   overflow-y: auto;
   border-radius: var(--radius);
 
+  /* Hide scrollbar but keep scrolling */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
   font-family: var(--font);
   font-size: 14px;
   line-height: 1.7;
@@ -74,7 +78,9 @@ textarea.content {
   background: transparent;
 }
 
-/* ── Flag (branding + note path) ─────────────────── */
+textarea.content::-webkit-scrollbar {
+  display: none;
+}
 
 .flag {
   flex-shrink: 0;
