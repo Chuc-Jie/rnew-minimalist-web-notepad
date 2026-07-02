@@ -32,7 +32,7 @@ html, body {
 
 .stack {
   position: fixed;
-  inset: 24px;
+  inset: 16px;
   display: flex;
   flex-direction: column;
 }
@@ -73,8 +73,7 @@ textarea.content {
   -ms-overflow-style: none;
 
   font-family: var(--font);
-  font-size: 14px;
-  line-height: 1.7;
+  font-size: 18px;  line-height: 1.7;
   color: var(--text);
   background: transparent;
 }
@@ -160,8 +159,8 @@ textarea.content::-webkit-scrollbar {
 /* ── Mobile ──────────────────────────────────────── */
 
 @media (max-width: 480px) {
-  .stack { inset: 16px; }
-  textarea.content { padding: 16px; font-size: 13px; }
+  .stack { inset: 10px; }
+  textarea.content { padding: 12px; font-size: 16px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
