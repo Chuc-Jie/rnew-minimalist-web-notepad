@@ -52,12 +52,13 @@
       retryCount++;
 
       if (retryCount >= MAX_RETRIES) {
-        setStatus('error', 'Save failed — retrying…');
-      } else {
-        setStatus('error', 'Save error');
+        setStatus('error', 'Save failed');
+        console.warn('Notepad: giving up after', MAX_RETRIES, 'failed attempts');
+        return;  // Stop retrying
       }
 
-      console.warn('Notepad save error:', err);
+      setStatus('error', 'Save error');
+      console.warn('Notepad save error:', err, `(attempt ${retryCount}/${MAX_RETRIES})`);
     } finally {
       isSaving = false;
     }

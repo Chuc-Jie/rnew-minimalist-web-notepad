@@ -15,7 +15,7 @@
     --bg:       #1a1a1a;
     --surface:  #222;
     --text:     #ddd;
-    --text-dim: #555;
+    --text-dim: #888;
     --border:   rgba(255,255,255,.06);
   }
 }
@@ -25,6 +25,7 @@
 html, body {
   height: 100%;
   background: var(--bg);
+  transition: background .3s;
 }
 
 /* ── Stack: outer wrapper ─────────────────────────── */
@@ -161,4 +162,8 @@ textarea.content::-webkit-scrollbar {
 @media (max-width: 480px) {
   .stack { inset: 16px; }
   textarea.content { padding: 16px; font-size: 13px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: 0.01ms !important; }
 }
