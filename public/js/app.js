@@ -229,16 +229,16 @@
 
   function buildContextMenu() {
     ctxMenu.innerHTML =
-      '<button data-action="insert-table">Insert Table</button>' +
+      '<button data-action="insert-table">插入表格</button>' +
       '<hr class="table-only">' +
-      '<button data-action="insert-row-above" class="table-only">Insert Row Above</button>' +
-      '<button data-action="insert-row-below" class="table-only">Insert Row Below</button>' +
-      '<button data-action="insert-col-left" class="table-only">Insert Column Left</button>' +
-      '<button data-action="insert-col-right" class="table-only">Insert Column Right</button>' +
+      '<button data-action="insert-row-above" class="table-only">上方插入行</button>' +
+      '<button data-action="insert-row-below" class="table-only">下方插入行</button>' +
+      '<button data-action="insert-col-left" class="table-only">左侧插入列</button>' +
+      '<button data-action="insert-col-right" class="table-only">右侧插入列</button>' +
       '<hr class="table-only">' +
-      '<button data-action="delete-row" class="table-only">Delete Row</button>' +
-      '<button data-action="delete-col" class="table-only">Delete Column</button>' +
-      '<button data-action="delete-table" class="table-only">Delete Table</button>';
+      '<button data-action="delete-row" class="table-only">删除当前行</button>' +
+      '<button data-action="delete-col" class="table-only">删除当前列</button>' +
+      '<button data-action="delete-table" class="table-only">删除表格</button>';
   }
 
   function showContextMenu(e, inTable) {
@@ -358,12 +358,12 @@
     overlay.id = 'dialog-overlay';
     overlay.innerHTML =
       '<div id="dialog-box">' +
-        '<h3>Insert Table</h3>' +
-        '<div class="row"><label>Rows</label><input id="d-rows" type="number" value="3" min="1" max="50"></div>' +
-        '<div class="row"><label>Cols</label><input id="d-cols" type="number" value="3" min="1" max="20"></div>' +
+        '<h3>插入表格</h3>' +
+        '<div class="row"><label>行</label><input id="d-rows" type="number" value="3" min="1" max="50"></div>' +
+        '<div class="row"><label>列</label><input id="d-cols" type="number" value="3" min="1" max="20"></div>' +
         '<div class="actions">' +
-          '<button id="d-cancel">Cancel</button>' +
-          '<button id="d-ok" class="primary">Insert</button>' +
+          '<button id="d-cancel">取消</button>' +
+          '<button id="d-ok" class="primary">插入</button>' +
         '</div>' +
       '</div>';
     document.body.appendChild(overlay);
