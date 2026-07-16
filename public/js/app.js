@@ -223,6 +223,8 @@
 
   // ── Context Menu ─────────────────────────────────────────
 
+  var ctxClickTarget = null;
+
   function buildContextMenu() {
     ctxMenu.innerHTML =
       '<button data-action="insert-table">Insert Table</button>' +
@@ -239,6 +241,7 @@
 
   function showContextMenu(e, inTable) {
     e.preventDefault();
+    ctxClickTarget = e.target;  // Save for table insertion
     if (!inTable) {
       ctxMenu.querySelectorAll('.table-only').forEach(function (el) { el.style.display = 'none'; });
     } else {
@@ -394,20 +397,36 @@
       table.appendChild(tr);
     }
 
+    editor.focus();
+
+    // Try to find a position for the table
+    var range = null;
     var sel = window.getSelection();
-    if (sel.rangeCount) {
-      var range = sel.getRangeAt(0);
-      range.deleteContents();
-      range.insertNode(table);
-      // Move cursor to first cell
-      var firstCell = table.querySelector('th, td');
-      if (firstCell) {
-        var newRange = document.createRange();
-        newRange.setStart(firstCell, 0);
-        newRange.collapse(true);
-        sel.removeAllRanges();
-        sel.addRange(newRange);
-      }
+
+    if (sel.rangeCount && editor.contains(sel.getRangeAt(0).commonAncestorContainer)) {
+      range = sel.getRangeAt(0).cloneRange();
+    }
+
+    // If no valid selection, append to end of editor
+    if (!range) {
+      range = document.createRange();
+      range.selectNodeContents(editor);
+      range.collapse(false);
+    }
+
+    sel.removeAllRanges();
+    sel.addRange(range);
+    range.deleteContents();
+    range.insertNode(table);
+
+    // Move cursor to first cell
+    var firstCell = table.querySelector('th, td');
+    if (firstCell) {
+      var newRange = document.createRange();
+      newRange.setStart(firstCell, 0);
+      newRange.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(newRange);
     }
   }
 
