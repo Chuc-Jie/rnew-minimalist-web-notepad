@@ -58,9 +58,9 @@ html, body {
 /* ── Editor (contenteditable div) ──────────────── */
 
 textarea.content, #content {
-  display: block;
+  flex: 1;
+  min-height: 0;
   width: 100%;
-  height: 100%;
   padding: 18px;
   border: none;
   outline: none;
