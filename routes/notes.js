@@ -47,9 +47,8 @@ router.get('/:note', async (req, res) => {
 
   // Serve HTML page with content injection
   const content = (await storage.getNote(note)) || '';
-  const escapedContent = escapeHtml(content);
 
-  const html = renderPage(escapedContent, note);
+  const html = renderPage(content, note);
   res.type('text/html').send(html);
 });
 
@@ -96,7 +95,7 @@ function renderPage(content, noteId) {
   <div class="layer">
     <div class="layer">
       <div class="layer">
-        <textarea id="content" class="content" spellcheck="true">${content}</textarea>
+        <div id="content" class="content" contenteditable="true"></div>
       </div>
     </div>
   </div>
@@ -105,10 +104,12 @@ function renderPage(content, noteId) {
   </div>
 </div>
 <pre id="printable"></pre>
+<div id="ctx-menu" class="ctx-menu" style="display:none"></div>
 <div id="status-bar">
   <span id="status-indicator" class="status--idle"></span>
   <span id="status-text">Ready</span>
 </div>
+<script>const initialContent = ${JSON.stringify(content)};</script>
 <script src="${jsPath}"></script>
 </body>
 </html>`;

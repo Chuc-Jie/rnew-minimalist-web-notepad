@@ -1,22 +1,141 @@
 /* ═══════════════════════════════════════════════════════════════
-   Minimalist Web Notepad — Auto-save Frontend
+   Minimalist Web Notepad — Auto-save Frontend (contenteditable)
    ═══════════════════════════════════════════════════════════════ */
 
 (function () {
   'use strict';
 
-  const textarea = document.getElementById('content');
+  const editor = document.getElementById('content');
   const printable = document.getElementById('printable');
   const statusIndicator = document.getElementById('status-indicator');
   const statusText = document.getElementById('status-text');
+  const ctxMenu = document.getElementById('ctx-menu');
 
   // ── State ────────────────────────────────────────────────
 
-  let savedContent = textarea.value;        // Last known saved state
+  let savedContent = '';
   let isSaving = false;
   let saveTimer = null;
   let retryCount = 0;
   const MAX_RETRIES = 3;
+
+  // ── Serialization (div → text with Markdown tables) ─────
+
+  function serialize() {
+    let result = '';
+    for (const node of editor.childNodes) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        result += node.textContent;
+      } else if (node.nodeType === Node.ELEMENT_NODE) {
+        if (node.tagName === 'TABLE') {
+          result += '\n' + tableToMarkdown(node) + '\n';
+        } else if (node.tagName === 'BR') {
+          result += '\n';
+        } else if (node.tagName === 'DIV') {
+          result += serializeChild(node) + '\n';
+        }
+      }
+    }
+    return result.replace(/\n{3,}/g, '\n\n');
+  }
+
+  function serializeChild(parent) {
+    let result = '';
+    for (const node of parent.childNodes) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        result += node.textContent;
+      } else if (node.nodeType === Node.ELEMENT_NODE) {
+        if (node.tagName === 'TABLE') {
+          result += '\n' + tableToMarkdown(node) + '\n';
+        } else if (node.tagName === 'BR') {
+          result += '\n';
+        } else if (node.tagName === 'DIV') {
+          result += serializeChild(node) + '\n';
+        }
+      }
+    }
+    return result;
+  }
+
+  function tableToMarkdown(table) {
+    const rows = table.querySelectorAll('tr');
+    if (!rows.length) return '';
+    const lines = [];
+    rows.forEach(function (row, i) {
+      const cells = row.querySelectorAll('td, th');
+      var line = '| ' + Array.from(cells).map(function (c) { return c.textContent; }).join(' | ') + ' |';
+      lines.push(line);
+      if (i === 0) {
+        lines.push('|' + Array(cells.length).fill('---').join('|') + '|');
+      }
+    });
+    return lines.join('\n');
+  }
+
+  // ── Deserialization (text with Markdown tables → HTML) ─
+
+  function deserialize(text) {
+    if (!text) return '';
+    var lines = text.split('\n');
+    var html = '';
+    var i = 0;
+
+    while (i < lines.length) {
+      if (lines[i].trim().charAt(0) === '|') {
+        var tableLines = [];
+        while (i < lines.length && lines[i].trim().charAt(0) === '|') {
+          tableLines.push(lines[i].trim());
+          i++;
+        }
+        var dataRows = tableLines.filter(function (l) {
+          return !/^\|[-:\s]+\|$/.test(l);
+        });
+        if (dataRows.length > 0) {
+          html += buildTableHtml(dataRows);
+        }
+      } else {
+        html += esc(lines[i]);
+        if (i < lines.length - 1) {
+          html += '<br>';
+        }
+        i++;
+      }
+    }
+    return html;
+  }
+
+  function buildTableHtml(rows) {
+    var html = '<table>';
+    rows.forEach(function (row, idx) {
+      var tag = idx === 0 ? 'th' : 'td';
+      var cells = row.split('|').filter(function (c) { return c.trim() !== ''; });
+      html += '<tr>';
+      cells.forEach(function (cell) {
+        html += '<' + tag + '>' + esc(cell.trim()) + '</' + tag + '>';
+      });
+      html += '</tr>';
+    });
+    html += '</table>';
+    return html;
+  }
+
+  function esc(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  // ── Content get/set ──────────────────────────────────
+
+  function getContent() {
+    return serialize();
+  }
+
+  function setContent(text) {
+    editor.innerHTML = deserialize(text);
+    savedContent = getContent();
+  }
 
   // ── Status Display ───────────────────────────────────────
 
@@ -35,7 +154,7 @@
     setStatus('saving', 'Saving…');
 
     try {
-      const response = await fetch(window.location.pathname, {
+      var response = await fetch(window.location.pathname, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
@@ -54,11 +173,11 @@
       if (retryCount >= MAX_RETRIES) {
         setStatus('error', 'Save failed');
         console.warn('Notepad: giving up after', MAX_RETRIES, 'failed attempts');
-        return;  // Stop retrying
+        return;
       }
 
       setStatus('error', 'Save error');
-      console.warn('Notepad save error:', err, `(attempt ${retryCount}/${MAX_RETRIES})`);
+      console.warn('Notepad save error:', err, '(attempt ' + retryCount + '/' + MAX_RETRIES + ')');
     } finally {
       isSaving = false;
     }
@@ -67,12 +186,10 @@
   // ── Polling Loop ─────────────────────────────────────────
 
   function uploadContent() {
-    const currentValue = textarea.value;
+    var currentValue = getContent();
 
     if (currentValue !== savedContent) {
-      // Content changed — save it
-      saveContent(currentValue).finally(() => {
-        // Update printable view
+      saveContent(currentValue).finally(function () {
         updatePrintable(currentValue);
         scheduleNext();
       });
@@ -91,51 +208,306 @@
     printable.textContent = text;
   }
 
-  // ── Visibility Change — Save immediately on tab hide ──────
+  // ── Visibility Change ────────────────────────────────────
 
   function handleVisibilityChange() {
-    if (document.hidden && textarea.value !== savedContent) {
-      if (saveTimer) {
-        clearTimeout(saveTimer);
+    if (document.hidden) {
+      var content = getContent();
+      if (content !== savedContent) {
+        if (saveTimer) clearTimeout(saveTimer);
+        savedContent = content;
+        saveContent(savedContent);
       }
-      savedContent = textarea.value;
-      saveContent(savedContent);
+    }
+  }
+
+  // ── Context Menu ─────────────────────────────────────────
+
+  function buildContextMenu() {
+    ctxMenu.innerHTML =
+      '<button data-action="insert-table">Insert Table</button>' +
+      '<hr class="table-only">' +
+      '<button data-action="insert-row-above" class="table-only">Insert Row Above</button>' +
+      '<button data-action="insert-row-below" class="table-only">Insert Row Below</button>' +
+      '<button data-action="insert-col-left" class="table-only">Insert Column Left</button>' +
+      '<button data-action="insert-col-right" class="table-only">Insert Column Right</button>' +
+      '<hr class="table-only">' +
+      '<button data-action="delete-row" class="table-only">Delete Row</button>' +
+      '<button data-action="delete-col" class="table-only">Delete Column</button>' +
+      '<button data-action="delete-table" class="table-only">Delete Table</button>';
+  }
+
+  function showContextMenu(e, inTable) {
+    e.preventDefault();
+    if (!inTable) {
+      ctxMenu.querySelectorAll('.table-only').forEach(function (el) { el.style.display = 'none'; });
+    } else {
+      ctxMenu.querySelectorAll('.table-only').forEach(function (el) { el.style.display = ''; });
+    }
+    ctxMenu.style.left = Math.min(e.clientX, window.innerWidth - 190) + 'px';
+    ctxMenu.style.top = Math.min(e.clientY, window.innerHeight - 200) + 'px';
+    ctxMenu.style.display = 'block';
+  }
+
+  function hideContextMenu() {
+    ctxMenu.style.display = 'none';
+  }
+
+  function getCellInfo(node) {
+    while (node && node !== editor) {
+      if (node.tagName === 'TD' || node.tagName === 'TH') {
+        var tr = node.parentNode;
+        var table = tr.parentNode;
+        var rows = Array.from(table.querySelectorAll('tr'));
+        var rowIdx = rows.indexOf(tr);
+        var cells = Array.from(tr.querySelectorAll('td, th'));
+        var colIdx = cells.indexOf(node);
+        return { cell: node, row: tr, table: table, rowIdx: rowIdx, colIdx: colIdx, rows: rows };
+      }
+      node = node.parentNode;
+    }
+    return null;
+  }
+
+  function handleCtxAction(action) {
+    hideContextMenu();
+    var sel = window.getSelection();
+    var info = sel.rangeCount ? getCellInfo(sel.getRangeAt(0).commonAncestorContainer) : null;
+
+    switch (action) {
+      case 'insert-table':
+        showInsertDialog();
+        break;
+      case 'insert-row-above':
+        if (info) addRow(info, true);
+        break;
+      case 'insert-row-below':
+        if (info) addRow(info, false);
+        break;
+      case 'insert-col-left':
+        if (info) addColumn(info, true);
+        break;
+      case 'insert-col-right':
+        if (info) addColumn(info, false);
+        break;
+      case 'delete-row':
+        if (info) removeRow(info);
+        break;
+      case 'delete-col':
+        if (info) removeColumn(info);
+        break;
+      case 'delete-table':
+        if (info) info.table.remove();
+        break;
+    }
+  }
+
+  // ── Table Editing ────────────────────────────────────────
+
+  function addRow(info, above) {
+    var tr = info.table.insertRow(info.rowIdx + (above ? 0 : 1));
+    var colCount = info.rows[0].querySelectorAll('td, th').length;
+    for (var i = 0; i < colCount; i++) {
+      var cell = tr.insertCell();
+      cell.innerHTML = '<br>';
+    }
+    // Focus first cell of new row
+    tr.cells[0].focus();
+  }
+
+  function removeRow(info) {
+    if (info.rows.length <= 1) return;
+    var next = info.row.nextElementSibling || info.row.previousElementSibling;
+    info.row.remove();
+    if (next) next.querySelector('td, th').focus();
+  }
+
+  function addColumn(info, left) {
+    var colIdx = info.colIdx + (left ? 0 : 1);
+    info.rows.forEach(function (row) {
+      var isHeader = row.parentNode.tagName === 'THEAD' || row === info.rows[0];
+      var cell = row.insertCell(colIdx);
+      cell.innerHTML = '<br>';
+    });
+    // Focus first cell of new column
+    var target = info.rows[0].cells[colIdx];
+    if (target) target.focus();
+  }
+
+  function removeColumn(info) {
+    var colIdx = info.colIdx;
+    var maxCols = 1;
+    info.rows.forEach(function (row) {
+      if (row.cells.length > maxCols) maxCols = row.cells.length;
+    });
+    if (maxCols <= 1) return;
+    info.rows.forEach(function (row) {
+      if (row.cells[colIdx]) row.deleteCell(colIdx);
+    });
+  }
+
+  // ── Insert Table Dialog ──────────────────────────────────
+
+  function showInsertDialog() {
+    var overlay = document.createElement('div');
+    overlay.id = 'dialog-overlay';
+    overlay.innerHTML =
+      '<div id="dialog-box">' +
+        '<h3>Insert Table</h3>' +
+        '<div class="row"><label>Rows</label><input id="d-rows" type="number" value="3" min="1" max="50"></div>' +
+        '<div class="row"><label>Cols</label><input id="d-cols" type="number" value="3" min="1" max="20"></div>' +
+        '<div class="actions">' +
+          '<button id="d-cancel">Cancel</button>' +
+          '<button id="d-ok" class="primary">Insert</button>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(overlay);
+    document.getElementById('d-rows').focus();
+    document.getElementById('d-rows').select();
+
+    function close() { overlay.remove(); }
+
+    document.getElementById('d-cancel').onclick = close;
+
+    document.getElementById('d-ok').onclick = function () {
+      var rows = parseInt(document.getElementById('d-rows').value) || 3;
+      var cols = parseInt(document.getElementById('d-cols').value) || 3;
+      close();
+      insertTableAtCursor(rows, cols);
+    };
+
+    overlay.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') close();
+      if (e.key === 'Enter') document.getElementById('d-ok').click();
+    });
+  }
+
+  function insertTableAtCursor(rows, cols) {
+    var table = document.createElement('table');
+    for (var r = 0; r < rows; r++) {
+      var tr = document.createElement('tr');
+      for (var c = 0; c < cols; c++) {
+        var cell = r === 0 ? document.createElement('th') : document.createElement('td');
+        if (r > 0 || c > 0) cell.innerHTML = '<br>';
+        tr.appendChild(cell);
+      }
+      table.appendChild(tr);
+    }
+
+    var sel = window.getSelection();
+    if (sel.rangeCount) {
+      var range = sel.getRangeAt(0);
+      range.deleteContents();
+      range.insertNode(table);
+      // Move cursor to first cell
+      var firstCell = table.querySelector('th, td');
+      if (firstCell) {
+        var newRange = document.createRange();
+        newRange.setStart(firstCell, 0);
+        newRange.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(newRange);
+      }
+    }
+  }
+
+  // ── Keyboard Navigation ──────────────────────────────────
+
+  function handleKeyDown(e) {
+    if (e.key === 'Tab') {
+      var sel = window.getSelection();
+      if (!sel.rangeCount) return;
+      var info = getCellInfo(sel.getRangeAt(0).commonAncestorContainer);
+      if (!info) return;
+
+      e.preventDefault();
+      var dir = e.shiftKey ? -1 : 1;
+      var totalRows = info.rows.length;
+      var totalCols = info.rows[0].querySelectorAll('td, th').length;
+      var newRow = info.rowIdx;
+      var newCol = info.colIdx + dir;
+
+      if (newCol >= totalCols) { newCol = 0; newRow++; }
+      if (newCol < 0) { newCol = totalCols - 1; newRow--; }
+      if (newRow < 0 || newRow >= totalRows) return;
+
+      var target = info.rows[newRow].querySelectorAll('td, th')[newCol];
+      if (target) target.focus();
+    }
+  }
+
+  // ── Paste Handler ────────────────────────────────────────
+
+  function handlePaste(e) {
+    e.preventDefault();
+    var text = (e.clipboardData || window.clipboardData).getData('text/plain');
+    if (text) {
+      document.execCommand('insertText', false, text);
     }
   }
 
   // ── Init ─────────────────────────────────────────────────
 
   function init() {
-    // Initialize printable content
-    updatePrintable(textarea.value);
+    // Load initial content
+    if (typeof initialContent !== 'undefined') {
+      setContent(initialContent);
+    }
 
-    // Focus the editor
-    textarea.focus();
+    // Build context menu
+    buildContextMenu();
 
-    // Set cursor to end of content
-    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+    // Right-click on editor
+    editor.addEventListener('contextmenu', function (e) {
+      var target = e.target;
+      var inTable = false;
+      while (target && target !== editor) {
+        if (target.tagName === 'TABLE') { inTable = true; break; }
+        target = target.parentNode;
+      }
+      showContextMenu(e, inTable);
+    });
 
-    // Start auto-save polling
+    // Context menu actions
+    ctxMenu.addEventListener('click', function (e) {
+      var btn = e.target.closest('button');
+      if (btn) handleCtxAction(btn.getAttribute('data-action'));
+    });
+
+    // Hide context menu on click outside
+    document.addEventListener('click', function (e) {
+      if (!ctxMenu.contains(e.target)) hideContextMenu();
+    });
+
+    // Keyboard navigation
+    editor.addEventListener('keydown', handleKeyDown);
+
+    // Paste as plain text
+    editor.addEventListener('paste', handlePaste);
+
+    // Focus editor
+    editor.focus();
+
+    // Start auto-save
+    updatePrintable(getContent());
     uploadContent();
 
-    // Save when tab loses focus (pagehide/visibilitychange)
+    // Save on tab hide
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('pagehide', function () {
-      if (textarea.value !== savedContent) {
-        // Use sendBeacon for reliable last save on unload
-        const blob = new Blob(
-          ['text=' + encodeURIComponent(textarea.value)],
+      var content = getContent();
+      if (content !== savedContent) {
+        var blob = new Blob(
+          ['text=' + encodeURIComponent(content)],
           { type: 'application/x-www-form-urlencoded' }
         );
         navigator.sendBeacon(window.location.pathname, blob);
       }
     });
 
-    // Set initial status
     setStatus('idle', 'Ready');
   }
 
-  // Kick off when DOM is ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {
