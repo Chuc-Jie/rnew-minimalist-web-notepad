@@ -88,7 +88,9 @@
           i++;
         }
         var dataRows = tableLines.filter(function (l) {
-          return !/^\|[-:\s]+\|$/.test(l);
+          // Skip separator rows (cells with only dashes/colons)
+          var parts = l.split('|').filter(function(c) { return c.trim() !== ''; });
+          return !parts.every(function(c) { return /^[-:\s]+$/.test(c.trim()); });
         });
         if (dataRows.length > 0) {
           html += buildTableHtml(dataRows);
@@ -434,12 +436,12 @@
 
   function handleKeyDown(e) {
     if (e.key === 'Tab') {
+      e.preventDefault();  // Always stop Tab default first
       var sel = window.getSelection();
       if (!sel.rangeCount) return;
       var info = getCellInfo(sel.getRangeAt(0).commonAncestorContainer);
       if (!info) return;
 
-      e.preventDefault();
       var dir = e.shiftKey ? -1 : 1;
       var totalRows = info.rows.length;
       var totalCols = info.rows[0].querySelectorAll('td, th').length;
