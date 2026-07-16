@@ -7,8 +7,10 @@
 ## 特性
 
 - **极简**——打开即写，没有注册、登录、按钮
+- **文本 + 表格混排**——同一页面可编辑文字，也支持插入表格
+- **右键菜单**——右键插入表格、增删行列，所有操作都在页面上完成
 - **实时保存**——输入即存，关闭页面不丢内容
-- **命令行友好**——curl/wget 自动返回纯文本
+- **命令行友好**——curl/wget 自动返回纯文本，表格以 Markdown 格式呈现
 - **深色模式**——跟随系统设置自动切换
 - **打印友好**——打印时显示为纯文本
 - **移动端适配**——手机/平板/桌面
@@ -34,7 +36,7 @@ npm run dev
 # 保存笔记
 curl http://localhost:3000/mynote -d '你好，云端的纸！'
 
-# 读取笔记
+# 读取笔记（纯文本，表格显示为 Markdown 格式）
 curl http://localhost:3000/mynote
 
 # 浏览器打开
@@ -45,6 +47,17 @@ curl http://localhost:3000/mynote -d 'text='
 ```
 
 访问 `http://localhost:3000/任意名称` 会进入该笔记页面，名称不存在时自动创建。
+
+### 表格功能
+
+在编辑区**右键**打开菜单：
+
+- **插入表格**——弹出对话框设置行列数，在光标位置插入
+- **上方/下方插入行**——当前行位置增删行
+- **左侧/右侧插入列**——当前列位置增删列
+- **删除当前行/列/表格**
+
+表格内按 **Tab** 跳到下一格，**Shift+Tab** 回退上一格。
 
 ## 存储后端
 
@@ -75,12 +88,13 @@ curl http://localhost:3000/mynote -d 'text='
 ├── services/
 │   └── storage.js        存储层（文件系统 / Upstash Redis 自动切换）
 ├── public/
-│   ├── css/style.css     样式
-│   ├── js/app.js         前端自动保存逻辑
+│   ├── css/style.css     样式（编辑区、表格、右键菜单）
+│   ├── js/app.js         前端逻辑（自动保存、表格编辑、右键菜单）
 │   ├── favicon.ico
 │   └── favicon.svg
 ├── docs/
-│   └── upstash-redis-guide.md    Upstash Redis 配置指南
+│   ├── migration-log.md            PHP → Node.js 改造记录
+│   └── upstash-redis-guide.md      Upstash Redis 配置指南
 └── _tmp/                 本地文件存储目录
 ```
 
@@ -90,6 +104,7 @@ curl http://localhost:3000/mynote -d 'text='
 - **框架**: Express
 - **存储**: 文件系统 / Upstash Redis（自动切换）
 - **前端**: 原生 HTML + CSS + JavaScript（零依赖）
+- **编辑区**: contenteditable div，支持文本与表格混排
 - **CSS 变量**: 支持亮色/暗色主题
 
 ## License
