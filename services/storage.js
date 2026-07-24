@@ -65,6 +65,7 @@ const fileBackend = {
 
 let kvBackend = null;
 let kvInitError = null;
+let kvClient = null;
 
 function initKv() {
   if (kvBackend) return;
@@ -107,11 +108,6 @@ if (useKv) {
 } else {
   console.log('📦 Storage: File system (_tmp/)');
 }
-
-let kvClient = null;
-
-// (update initKv to also set kvClient — see above)
-// Actually, let me add getBackendInfo directly
 
 function getBackendInfo() {
   return {
