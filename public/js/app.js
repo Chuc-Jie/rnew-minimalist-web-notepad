@@ -32,11 +32,11 @@
         } else if (node.tagName === 'BR') {
           result += '\n';
         } else if (node.tagName === 'DIV') {
-          result += serializeChild(node) + '\n';
+          result += '\n' + serializeChild(node);
         }
       }
     }
-    return result.replace(/\n{3,}/g, '\n\n');
+    return result.replace(/\n{3,}/g, '\n\n').replace(/^\n+|\n+$/g, '');
   }
 
   function serializeChild(parent) {
@@ -50,7 +50,7 @@
         } else if (node.tagName === 'BR') {
           result += '\n';
         } else if (node.tagName === 'DIV') {
-          result += serializeChild(node) + '\n';
+          result += '\n' + serializeChild(node);
         }
       }
     }
