@@ -64,6 +64,7 @@ const fileBackend = {
 // ── Vercel KV backend ──────────────────────────────────────
 
 let kvBackend = null;
+let kvInitError = null;
 
 function initKv() {
   if (kvBackend) return;
@@ -88,7 +89,8 @@ function initKv() {
       },
     };
   } catch (e) {
-    console.error('Failed to init Upstash KV:', e.message);
+    kvInitError = e.message + ' | stack:' + (e.stack ? e.stack.split('\n')[0] : 'no stack');
+    console.error('Failed to init Upstash KV:', kvInitError);
     kvBackend = null;
   }
 }
@@ -119,6 +121,7 @@ function getBackendInfo() {
     hasKvUrl: !!process.env.KV_URL,
     hasKvRestUrl: !!process.env.KV_REST_API_URL,
     hasKvToken: !!process.env.KV_REST_API_TOKEN,
+    initError: kvInitError || 'none',
   };
 }
 
