@@ -70,6 +70,7 @@ function initKv() {
   try {
     const { Redis } = require('@upstash/redis');
     const kv = Redis.fromEnv();
+    kvClient = kv;
     kvBackend = {
       async getNote(id) {
         const val = await kv.get(id);
@@ -103,6 +104,22 @@ if (useKv) {
   console.log('📦 Storage: Upstash Redis');
 } else {
   console.log('📦 Storage: File system (_tmp/)');
+}
+
+let kvClient = null;
+
+// (update initKv to also set kvClient — see above)
+// Actually, let me add getBackendInfo directly
+
+function getBackendInfo() {
+  return {
+    useKv: useKv,
+    backend: useKv ? (kvBackend ? 'Upstash Redis' : 'filesystem (KV init failed, fallback)') : 'filesystem',
+    vercel: process.env.VERCEL || 'not set',
+    hasKvUrl: !!process.env.KV_URL,
+    hasKvRestUrl: !!process.env.KV_REST_API_URL,
+    hasKvToken: !!process.env.KV_REST_API_TOKEN,
+  };
 }
 
 /**
@@ -158,4 +175,4 @@ function isValidId(id) {
   );
 }
 
-module.exports = { getNote, saveNote, noteExists, generateId, isValidId };
+module.exports = { getNote, saveNote, noteExists, generateId, isValidId, getBackendInfo };

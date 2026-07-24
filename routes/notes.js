@@ -17,7 +17,11 @@ router.get('/', (req, res) => {
  * Simple health check (must be before /:note to avoid route shadowing).
  */
 router.get('/health', (req, res) => {
-  res.json({ status: 'ok', uptime: process.uptime() });
+  res.json({
+    status: 'ok',
+    uptime: process.uptime(),
+    storage: storage.getBackendInfo(),
+  });
 });
 
 /**
