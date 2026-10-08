@@ -23,6 +23,54 @@
   const BR_RE = /<br\s*\/?>/gi;
   const BR = '<br>';
 
+  /* 表格菜单 / 提示的中文文案。
+     key 必须与库里的英文原文逐字一致 —— 库内部是 jSuites.translate("那句英文")。 */
+  const DICT = {
+    // 行列操作
+    'Insert a new row before': '上方插入行',
+    'Insert a new row after': '下方插入行',
+    'Insert a new column before': '左侧插入列',
+    'Insert a new column after': '右侧插入列',
+    'Delete selected rows': '删除选中行',
+    'Delete selected columns': '删除选中列',
+    'Order ascending': '升序排列',
+    'Order descending': '降序排列',
+    'Merge the selected cells': '合并选中单元格',
+    'Rename this column': '重命名此列',
+    'Copy': '复制',
+    'Paste': '粘贴',
+    'Comments': '批注',
+    'Add comments': '添加批注',
+    'Clear comments': '清除批注',
+    'Column name': '列名',
+    // 确认与提示
+    'Are you sure to delete the selected rows?': '确定要删除选中的行吗？',
+    'Are you sure to delete the selected columns?': '确定要删除选中的列吗？',
+    'The merged cells will retain the value of the top-left cell only. Are you sure?': '合并后只会保留左上角单元格的值，确定吗？',
+    'This action will destroy any existing merged cells. Are you sure?': '此操作会取消已有的合并单元格，确定吗？',
+    'This action will clear your search results. Are you sure?': '此操作会清空当前的搜索结果，确定吗？',
+    'No cells selected': '未选中单元格',
+    'No records found': '没有记录',
+    // 分页 / 搜索等外围文案
+    'About': '关于',
+    'Save as': '另存为',
+    'Search': '搜索',
+    'Show ': '显示 ',
+    'Showing page {0} of {1} entries': '第 {0} / {1} 页',
+    'entries': '条',
+  };
+
+  /* Markdown 表达不了的表格功能：做了也存不下来，菜单里直接不给。
+     注意 pruneMenu 拿到的是「已翻译」的 title，所以英文原文和中文译文都要能匹配。 */
+  const HIDDEN_EN = [
+    'Merge the selected cells',
+    'Rename this column',
+    'Add comments',
+    'Comments',
+    'Clear comments',
+  ];
+  const HIDDEN_ITEMS = HIDDEN_EN.concat(HIDDEN_EN.map(function (k) { return DICT[k] || ''; }));
+
   /* ── 懒加载（页面注入过就直接可用，否则按序注入）────────── */
 
   let libPromise = null;
@@ -234,6 +282,27 @@
   }
 
   /**
+   * 过滤右键菜单：去掉 Markdown 存不下的项，并清理因此空出来的分隔线
+   * （不做这步会出现连续两条横线、或末尾挂一条横线）
+   */
+  function pruneMenu(items) {
+    if (!Array.isArray(items)) return items;
+    const isDivisor = function (it) {
+      return !!it && (it.type === 'line' || it.type === 'divisor');
+    };
+
+    const out = [];
+    items.forEach(function (it) {
+      if (!it) return;                                        // 空项直接丢，否则会挡住后面的去尾逻辑
+      if (HIDDEN_ITEMS.indexOf(it.title) >= 0) return;
+      if (isDivisor(it) && (!out.length || isDivisor(out[out.length - 1]))) return;
+      out.push(it);
+    });
+    while (out.length && isDivisor(out[out.length - 1])) out.pop();
+    return out;
+  }
+
+  /**
    * 建一个表格块元素（同步返回；库就绪后内部再补上实例）。
    * @param {string|Array} source Markdown 文本或二维矩阵
    */
@@ -260,6 +329,11 @@
     el.__ntBlock = block;
 
     loadLib().then(function () {
+      // 表格的菜单、确认框、提示一律中文（库的文案全部走 jSuites.translate）
+      if (global.jSuites && typeof global.jSuites.setDictionary === 'function') {
+        global.jSuites.setDictionary(DICT);
+      }
+
       const matrix = mdToMatrix(md);
       const seed = matrix.length ? matrix : [['', '', ''], ['', '', ''], ['', '', '']];
       const ret = global.jspreadsheet(host, {
@@ -273,6 +347,9 @@
         onevent: function (name) {
           // 不同版本的同名事件挂载位置不同，这里兜一层
           if (name === 'onresizecolumn' || name === 'onresizerow') commit(el);
+        },
+        contextMenu: function (instance, col, row, event, items) {
+          return pruneMenu(items);
         },
       });
       block.instance = Array.isArray(ret) ? ret[0] : ret;
