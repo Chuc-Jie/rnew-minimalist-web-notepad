@@ -2,5 +2,6 @@
 /node_modules/
 /reasonix/
 /.reasonix/
+/public/spike/
 note_ms_*.html
 CodeWhale.lnk

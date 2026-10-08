@@ -75,7 +75,8 @@ console.log('\n── 交互冒烟 ──');
   check('表格外 Tab 拦截并插入制表符', ev2.defaultPrevented, true);
 }
 
-// 3. 右键菜单：表格内显示增删行列
+// 3. 右键菜单：表格内的行列增删自 v2 起交给表格库（Jspreadsheet 自带菜单），
+//    我们的自研菜单不再介入，只保留「插入表格」
 {
   const { w, doc } = boot('| a | b |\n| --- | --- |\n| 1 | 2 |');
   const cell = doc.querySelectorAll('#content td, #content th')[0];
@@ -83,18 +84,8 @@ console.log('\n── 交互冒烟 ──');
   const menu = doc.getElementById('ctx-menu');
   const labels = Array.from(menu.querySelectorAll('button'))
     .filter(b => b.style.display !== 'none').map(b => b.textContent);
-  check('表格内右键出现「插入行」', labels.some(t => /插入行|行/.test(t)), true);
-  check('表格内右键出现「删除表格」', labels.some(t => /删除表格/.test(t)), true);
+  check('自研的行列操作已从菜单移除', labels.some(t => /插入行|删除表格|删除当前列|表头/.test(t)), false);
   check('菜单可见', menu.style.display !== 'none', true);
-
-  // 点「下方插入行」后行数 +1
-  const addBtn = Array.from(menu.querySelectorAll('button')).find(b => /插入行/.test(b.textContent));
-  if (addBtn) {
-    addBtn.click();
-    check('插入行后行数 +1', doc.querySelectorAll('#content tr').length, 3);
-  } else {
-    check('插入行按钮存在', false, true);
-  }
 }
 
 // 4. 表格外右键只显示插入表格

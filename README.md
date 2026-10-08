@@ -58,14 +58,15 @@ curl http://localhost:3000/mynote -d 'text='
 
 ### 表格功能
 
-在编辑区**右键**打开菜单：
+表格以 **Excel 式表格**呈现（基于 Jspreadsheet CE），点进格子直接改：
 
-- **插入表格**——弹出对话框设置行列数，在光标位置插入
-- **上方/下方插入行**——当前行位置增删行
-- **左侧/右侧插入列**——当前列位置增删列
-- **删除当前行/列/表格**
+- **选中与编辑**——点格子改内容；框选、拖拽填充、复制粘贴与表格软件一致
+- **增删行列**——在表格内**右键**，用表格自带的菜单
+- **公式**——单元格里写 `=SUM(A1:A3)` 这类公式会自动计算
+- **Tab / Enter**——跳下一格 / 确认并下移
+- **Excel 互操作**——从 Excel 复制一片数据，直接粘进表格
 
-表格内按 **Tab** 跳到下一格，**Shift+Tab** 回退上一格。
+在纸面（表格外）**右键**可以**插入表格**，弹出对话框设置行列数后在光标处插入。
 
 手机/平板没有右键，可点击页面右下角 flag 栏的 **＋表格** 按钮插入表格。
 
@@ -76,6 +77,11 @@ curl http://localhost:3000/mynote -d 'text='
 - 用 `curl` 写入的 Markdown 表格，浏览器打开时自动渲染成可编辑表格；
 - 浏览器里编辑的表格，`curl` 读出来就是标准 Markdown 表格；
 - 单元格内的 `|` 自动转义为 `\|`，空单元格也会被保留，往返读写不丢字符。
+
+表格**列宽**这类 Markdown 表达不了的状态，单独存在 `<笔记名>.meta` 键里（JSON），
+所以 `curl` 读到的正文永远是干净的 Markdown。
+
+> 表格库是**按需加载**的：笔记里没有表格时，页面不会请求任何表格库资源（见 `public/js/table-block.js`）。
 
 ## 存储后端
 
@@ -106,8 +112,10 @@ curl http://localhost:3000/mynote -d 'text='
 ├── services/
 │   └── storage.js        存储层（文件系统 / Upstash Redis 自动切换）
 ├── public/
-│   ├── css/style.css     样式（编辑区、表格、右键菜单）
-│   ├── js/app.js         前端逻辑（自动保存、表格编辑、右键菜单）
+│   ├── css/style.css     样式（编辑区、表格块、右键菜单）
+│   ├── js/app.js         前端逻辑（自动保存、Markdown 行流、表格块挂载）
+│   ├── js/table-block.js 表格块模块（懒加载表格库、Markdown ↔ 矩阵、列宽元数据）
+│   ├── vendor/           Jspreadsheet CE / jsuites / formula（仅在笔记含表格时加载）
 │   ├── favicon.ico
 │   └── favicon.svg
 ├── tests/
@@ -129,8 +137,9 @@ curl http://localhost:3000/mynote -d 'text='
 - **运行时**: Node.js
 - **框架**: Express
 - **存储**: 文件系统 / Upstash Redis（自动切换）
-- **前端**: 原生 HTML + CSS + JavaScript（零依赖）
-- **编辑区**: contenteditable div，支持文本与表格混排
+- **前端**: 原生 HTML + CSS + JavaScript（表格库按需加载，无构建流程）
+- **编辑区**: contenteditable div，文本与表格块混排
+- **表格**: [Jspreadsheet CE](https://github.com/jspreadsheet/ce) 5.0.4（MIT，UMD，仅在笔记含表格时加载）
 - **CSS 变量**: 支持亮色/暗色主题
 
 ## License

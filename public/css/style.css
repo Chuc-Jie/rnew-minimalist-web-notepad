@@ -189,14 +189,15 @@ textarea.content::-webkit-scrollbar,
 
 /* ── Table (inside contenteditable) ──────────────── */
 
-#content table {
+/* 只匹配直接子表格 —— 表格块内部由库自己渲染 <table>，不能被这些老规则命中 */
+#content > table {
   border-collapse: collapse;
   margin: 8px 0;
   width: auto;
   min-width: 60%;
 }
 
-#content th, #content td {
+#content > table th, #content > table td {
   border: 1px solid var(--text-dim);
   padding: 6px 12px;
   min-width: 60px;
@@ -207,20 +208,20 @@ textarea.content::-webkit-scrollbar,
   outline: none;
 }
 
-#content th {
+#content > table th {
   font-weight: 600;
 }
 
-#content td:focus, #content th:focus {
+#content > table td:focus, #content > table th:focus {
   background: rgba(0,122,255,.06);
   border-color: #007aff;
 }
 
 @media (prefers-color-scheme: dark) {
-  #content th, #content td {
+  #content > table th, #content > table td {
     border-color: #555;
   }
-  #content td:focus, #content th:focus {
+  #content > table td:focus, #content > table th:focus {
     background: rgba(10,132,255,.12);
     border-color: #0a84ff;
   }
@@ -344,26 +345,61 @@ textarea.content::-webkit-scrollbar,
   }
 }
 
-/* ── 表格增强 ──────────────────────────────────────── */
+/* ── 表格块（Jspreadsheet 渲染的混排表格）─────────────── */
+
+.tbl {
+  margin: 10px 0;
+  border: 1px solid var(--text-dim);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.tbl[data-active="1"] {
+  border-color: #007aff;
+  box-shadow: 0 0 0 2px rgba(0,122,255,.15);
+}
+
+.tbl .hint {
+  font: 11px/1.7 -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+  color: var(--text-dim);
+  padding: 3px 10px;
+  background: rgba(127, 127, 127, .07);
+  border-bottom: 1px solid var(--text-dim);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.tbl[data-active="1"] .hint { color: #007aff; }
+
+.tbl .tbl-host { background: #fff; }
+
+@media (prefers-color-scheme: dark) {
+  .tbl[data-active="1"] {
+    border-color: #0a84ff;
+    box-shadow: 0 0 0 2px rgba(10,132,255,.2);
+  }
+  .tbl[data-active="1"] .hint { color: #0a84ff; }
+}
+
+/* ── 兜底：table-block.js 缺失时仍按老方式渲染 contenteditable 表格 ── */
 
 /* 空格子也要有高度，否则点不进去 */
-#content th:empty,
-#content td:empty,
-#content th:only-child > br:only-child,
-#content td:only-child > br:only-child {
+#content > table th:empty,
+#content > table td:empty,
+#content > table th:only-child > br:only-child,
+#content > table td:only-child > br:only-child {
   min-height: 1.5em;
 }
 
-#content th,
-#content td {
+#content > table th,
+#content > table td {
   min-width: 2.2em;
-  min-height: 1.5em;
   vertical-align: top;
 }
 
 /* 光标所在格子给一点反馈 */
-#content td:focus,
-#content th:focus {
+#content > table td:focus,
+#content > table th:focus {
   outline: none;
   background: rgba(127, 127, 127, .07);
 }

@@ -51,8 +51,10 @@ router.get('/:note', async (req, res) => {
 
   // Serve HTML page with content injection
   const content = (await storage.getNote(note)) || '';
+  // 表格元数据（列宽等）单独存一个键，保证正文始终是干净的 Markdown
+  const meta = (await storage.getNote(note + '.meta')) || '';
 
-  const html = renderPage(content, note);
+  const html = renderPage(content, note, meta);
   res.type('text/html').send(html);
 });
 
@@ -74,12 +76,20 @@ router.post('/:note', async (req, res) => {
   }
 
   await storage.saveNote(note, text);
+
+  // 表格元数据（列宽等）与正文分开存：空串即删除，正文清空时不留残渣
+  if (typeof req.body.meta === 'string') {
+    await storage.saveNote(note + '.meta', req.body.meta);
+  } else if (text.length === 0) {
+    await storage.saveNote(note + '.meta', '');   // 删笔记（空正文）时连元数据一起清掉
+  }
+
   res.status(204).send();
 });
 
 // ── Helper: HTML template ────────────────────────────────────
 
-function renderPage(content, noteId) {
+function renderPage(content, noteId, meta) {
   const cssPath = '/css/style.css';
   const jsPath = '/js/app.js';
 
@@ -115,6 +125,8 @@ function renderPage(content, noteId) {
   <span id="status-text">Ready</span>
 </div>
 <script>const initialContent = ${JSON.stringify(content).replace(/</g, '\\u003c')};</script>
+<script>const initialMeta = ${JSON.stringify(meta || '').replace(/</g, '\\u003c')};</script>
+<script src="/js/table-block.js"></script>
 <script src="${jsPath}"></script>
 </body>
 </html>`;
