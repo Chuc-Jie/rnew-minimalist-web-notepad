@@ -34,7 +34,11 @@ npm run dev
 
 ```bash
 # 保存笔记
-curl http://localhost:3000/mynote -d '你好，云端的纸！'
+curl http://localhost:3000/mynote -d 'text=你好，云端的纸！'
+
+# 或按纯文本发送（正文原样保存，不走表单解析）
+curl http://localhost:3000/mynote \
+  -H 'Content-Type: text/plain' --data-binary '你好，云端的纸！'
 
 # 读取笔记（纯文本，表格显示为 Markdown 格式）
 curl http://localhost:3000/mynote
@@ -45,6 +49,10 @@ open http://localhost:3000/mynote
 # 删除笔记（空内容）
 curl http://localhost:3000/mynote -d 'text='
 ```
+
+> `-d` 的参数会被当作表单解析，所以正文必须写成 `text=内容`；
+> 直接 `curl -d '任意文本'`（不带 `text=`）会被解析成对象，存进去的是 JSON 字符串而不是你要的正文。
+> 用 `wget` 或 `curl` 读取时自动返回纯文本，浏览器访问则打开编辑页面。
 
 访问 `http://localhost:3000/任意名称` 会进入该笔记页面，名称不存在时自动创建。
 
@@ -58,6 +66,16 @@ curl http://localhost:3000/mynote -d 'text='
 - **删除当前行/列/表格**
 
 表格内按 **Tab** 跳到下一格，**Shift+Tab** 回退上一格。
+
+手机/平板没有右键，可点击页面右下角 flag 栏的 **＋表格** 按钮插入表格。
+
+### 表格的存储格式
+
+表格以 **Markdown 表格**写进笔记文本，和纯文本共用同一个行流，因此两种入口完全互通：
+
+- 用 `curl` 写入的 Markdown 表格，浏览器打开时自动渲染成可编辑表格；
+- 浏览器里编辑的表格，`curl` 读出来就是标准 Markdown 表格；
+- 单元格内的 `|` 自动转义为 `\|`，空单元格也会被保留，往返读写不丢字符。
 
 ## 存储后端
 
@@ -92,9 +110,17 @@ curl http://localhost:3000/mynote -d 'text='
 │   ├── js/app.js         前端逻辑（自动保存、表格编辑、右键菜单）
 │   ├── favicon.ico
 │   └── favicon.svg
+├── tests/
+│   ├── table-roundtrip.test.js  表格往返守恒测试（npm test）
+│   └── table-ui.test.js         表格交互冒烟测试
 ├── docs/
 │   ├── migration-log.md            PHP → Node.js 改造记录
-│   └── upstash-redis-guide.md      Upstash Redis 配置指南
+│   ├── mixed-editor-plan.md        文本 + 表格混合编辑方案
+│   ├── table-feature-plan.md       表格功能方案
+│   ├── table-feature-fix-notes.md  表格修复说明
+│   ├── upstash-redis-guide.md      Upstash Redis 配置指南
+│   ├── upstash-data-query-guide.md 线上数据查询指南
+│   └── xiaohongshu-post.md         推广文案
 └── _tmp/                 本地文件存储目录
 ```
 

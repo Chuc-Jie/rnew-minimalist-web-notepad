@@ -115,14 +115,27 @@ textarea.content::-webkit-scrollbar,
   .stack { display: none; }
   #printable {
     display: block;
-    white-space: pre-wrap;
-    word-break: break-word;
     font-family: var(--font);
     font-size: 10pt;
     line-height: 1.6;
     padding: 0.5in;
     color: #000;
   }
+  #printable div { min-height: 1.6em; }
+  #printable table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 8px 0;
+    font-size: 9pt;
+  }
+  #printable th,
+  #printable td {
+    border: 1px solid #000;
+    padding: 5px 7px;
+    vertical-align: top;
+    text-align: left;
+  }
+  #printable th { background: #eee; font-weight: 600; }
 }
 
 /* ── Status bar ──────────────────────────────────── */
@@ -329,4 +342,73 @@ textarea.content::-webkit-scrollbar,
     background: #0a84ff;
     border-color: #0a84ff;
   }
+}
+
+/* ── 表格增强 ──────────────────────────────────────── */
+
+/* 空格子也要有高度，否则点不进去 */
+#content th:empty,
+#content td:empty,
+#content th:only-child > br:only-child,
+#content td:only-child > br:only-child {
+  min-height: 1.5em;
+}
+
+#content th,
+#content td {
+  min-width: 2.2em;
+  min-height: 1.5em;
+  vertical-align: top;
+}
+
+/* 光标所在格子给一点反馈 */
+#content td:focus,
+#content th:focus {
+  outline: none;
+  background: rgba(127, 127, 127, .07);
+}
+
+/* 表格与相邻文字之间留出呼吸位 */
+#content > table {
+  margin: .35em 0;
+}
+
+#content > div:empty,
+#content > div > br:only-child {
+  min-height: 1.5em;
+}
+
+/* ── flag 栏的插入表格按钮（移动端右键不可用，用它兜底） ── */
+
+.flag #btn-table {
+  font: inherit;
+  font-size: 11px;
+  color: inherit;
+  opacity: .55;
+  background: none;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 1px 9px;
+  margin-left: 8px;
+  cursor: pointer;
+  transition: opacity .15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.flag #btn-table:hover,
+.flag #btn-table:active {
+  opacity: 1;
+}
+
+@media (max-width: 600px) {
+  .flag #btn-table { opacity: .85; padding: 3px 11px; }
+}
+
+/* ── 对话框里的复选框 ─────────────────────────────── */
+
+#dialog-box input[type="checkbox"] {
+  width: auto;
+  padding: 0;
+  border: none;
+  text-align: left;
 }

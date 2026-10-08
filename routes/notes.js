@@ -105,15 +105,16 @@ function renderPage(content, noteId) {
   </div>
   <div class="flag">
     <a href="/">Note.ms</a>/${escapeHtml(noteId)}
+    <button id="btn-table" type="button" title="插入表格">＋表格</button>
   </div>
 </div>
-<pre id="printable"></pre>
+<div id="printable"></div>
 <div id="ctx-menu" class="ctx-menu" style="display:none"></div>
 <div id="status-bar">
   <span id="status-indicator" class="status--idle"></span>
   <span id="status-text">Ready</span>
 </div>
-<script>const initialContent = ${JSON.stringify(content)};</script>
+<script>const initialContent = ${JSON.stringify(content).replace(/</g, '\\u003c')};</script>
 <script src="${jsPath}"></script>
 </body>
 </html>`;
