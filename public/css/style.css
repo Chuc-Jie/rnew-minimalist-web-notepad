@@ -347,39 +347,23 @@ textarea.content::-webkit-scrollbar,
 
 /* ── 表格块（Jspreadsheet 渲染的混排表格）─────────────── */
 
+/* 不做卡片外壳：表格直接贴在纸面上，编辑反馈交给库自身的单元格高亮 */
 .tbl {
   margin: 10px 0;
-  border: 1px solid var(--text-dim);
-  border-radius: 6px;
-  overflow: hidden;
 }
 
-.tbl[data-active="1"] {
-  border-color: #007aff;
-  box-shadow: 0 0 0 2px rgba(0,122,255,.15);
-}
+/* 提示条平时不占位，只在表格库加载失败时露出来报错 */
+.tbl .hint { display: none; }
 
-.tbl .hint {
+.tbl[data-error="1"] .hint {
+  display: block;
   font: 11px/1.7 -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
-  color: var(--text-dim);
-  padding: 3px 10px;
-  background: rgba(127, 127, 127, .07);
-  border-bottom: 1px solid var(--text-dim);
-  user-select: none;
-  -webkit-user-select: none;
+  color: #c0392b;
+  padding: 2px 0;
 }
 
-.tbl[data-active="1"] .hint { color: #007aff; }
-
+/* 表格区底色跟单元格一致（深色模式适配见 docs/spike-hybrid-table-notes.md） */
 .tbl .tbl-host { background: #fff; }
-
-@media (prefers-color-scheme: dark) {
-  .tbl[data-active="1"] {
-    border-color: #0a84ff;
-    box-shadow: 0 0 0 2px rgba(10,132,255,.2);
-  }
-  .tbl[data-active="1"] .hint { color: #0a84ff; }
-}
 
 /* ── 兜底：table-block.js 缺失时仍按老方式渲染 contenteditable 表格 ── */
 
